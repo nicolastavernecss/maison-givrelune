@@ -1,0 +1,1007 @@
+// ════════════════════════════════════════════════════════════════════
+//  MAISON GIVRELUNE — modèle de données
+//  « Nés sans titre, élevés par nos actes. »
+//
+//  Le schéma est volontairement portable : aucun enum SQL, aucun type
+//  natif spécifique. Pour passer en production sur PostgreSQL (Neon,
+//  Supabase, Railway…) il suffit de remplacer `sqlite` par `postgresql`
+//  ci-dessous et de mettre l'URL correspondante dans DATABASE_URL.
+// ════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  RÉFÉRENTIELS D'ORGANISATION
+// ─────────────────────────────────────────────────────────────
+
+/// Rang = autorité globale. level 1 = Patriarche (le plus haut).
+model Rank {
+  id          String @id @default(cuid())
+  key         String @unique
+  label       String
+  level       Int
+  description String @default("")
+  color       String @default("#c8b273")
+
+  users       User[]
+  permissions RankPermission[]
+}
+
+model Branch {
+  id          String @id @default(cuid())
+  key         String @unique
+  label       String
+  description String @default("")
+  motto       String @default("")
+  icon        String @default("branch")
+  color       String @default("#7fa8c9")
+  position    Int    @default(0)
+
+  grades       Grade[]
+  circles      Circle[]
+  users        User[]
+  missions     Mission[]
+  announcements Announcement[]
+}
+
+/// Grade au sein d'une branche. level 1 = chef de branche.
+model Grade {
+  id       String @id @default(cuid())
+  key      String @unique
+  label    String
+  level    Int
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  users       User[]
+  permissions GradePermission[]
+
+  @@index([branchId])
+}
+
+model Circle {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  label       String
+  description String  @default("")
+  branchId    String?
+  branch      Branch? @relation(fields: [branchId], references: [id])
+  leaderId    String?
+  leader      User?   @relation("CircleLeader", fields: [leaderId], references: [id])
+
+  members  User[]  @relation("CircleMembers")
+  patrols  Patrol[]
+}
+
+/// Fonction transverse du Conseil de la Maison.
+model CouncilRole {
+  id          String @id @default(cuid())
+  key         String @unique
+  label       String
+  description String @default("")
+  icon        String @default("council")
+  position    Int    @default(0)
+
+  users       User[]
+  permissions CouncilPermission[]
+}
+
+/// Métier. `isProducer` = dispose d'un atelier (recettes + calculateur).
+model Metier {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  label       String
+  category    String // extraction | transformation | service
+  description String  @default("")
+  icon        String  @default("metier")
+  isProducer  Boolean @default(false)
+  station     String  @default("") // Forge, Fourneau, Chevalet, Chaudron…
+  position    Int     @default(0)
+
+  members     UserMetier[]
+  recipes     Recipe[]
+  craftOrders CraftOrder[]
+  inventory   InventoryItem[]
+  prix        MetierPrice[]
+  productions ProductionEntry[]
+  rapports    Rapport[]
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PERMISSIONS
+// ─────────────────────────────────────────────────────────────
+
+model Permission {
+  id          String @id @default(cuid())
+  key         String @unique
+  label       String
+  category    String @default("general")
+  description String @default("")
+
+  ranks    RankPermission[]
+  grades   GradePermission[]
+  councils CouncilPermission[]
+  users    UserPermission[]
+}
+
+model RankPermission {
+  rankId       String
+  permissionId String
+  rank         Rank       @relation(fields: [rankId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([rankId, permissionId])
+}
+
+model GradePermission {
+  gradeId      String
+  permissionId String
+  grade        Grade      @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([gradeId, permissionId])
+}
+
+model CouncilPermission {
+  councilRoleId String
+  permissionId  String
+  councilRole   CouncilRole @relation(fields: [councilRoleId], references: [id], onDelete: Cascade)
+  permission    Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([councilRoleId, permissionId])
+}
+
+/// Octroi ou retrait ponctuel, membre par membre.
+model UserPermission {
+  userId       String
+  permissionId String
+  granted      Boolean @default(true)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permissionId])
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MEMBRES
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id              String  @id @default(cuid())
+  login           String  @unique
+  passwordHash    String?
+  discordId       String? @unique
+  discordUsername String?
+  email           String?
+
+  nomRp     String
+  avatarUrl String @default("")
+  bio       String @default("")
+
+  rankId        String
+  rank          Rank         @relation(fields: [rankId], references: [id])
+  branchId      String?
+  branch        Branch?      @relation(fields: [branchId], references: [id])
+  gradeId       String?
+  grade         Grade?       @relation(fields: [gradeId], references: [id])
+  councilRoleId String?
+  councilRole   CouncilRole? @relation(fields: [councilRoleId], references: [id])
+  circleId      String?
+  circle        Circle?      @relation("CircleMembers", fields: [circleId], references: [id])
+
+  /// actif | essai | archive
+  status       String    @default("essai")
+  presentedById String?
+  presentedBy  User?     @relation("Parrainage", fields: [presentedById], references: [id])
+  filleuls     User[]    @relation("Parrainage")
+  dateEntree   DateTime  @default(now())
+  dateSortie   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastSeenAt DateTime?
+  /// Toute session émise avant cette date est refusée. Repoussée à chaque
+  /// changement de mot de passe : changer son mot de passe déconnecte
+  /// partout, y compris un éventuel intrus.
+  sessionsDepuis DateTime?
+
+  // Relations inverses
+  metiers          UserMetier[]
+  ledCircles       Circle[]           @relation("CircleLeader")
+  permissions      UserPermission[]
+  marketPrices     MarketPrice[]
+  inventoryItems   InventoryItem[]
+  invMovements     InventoryMovement[]
+  attachments      Attachment[]
+  recipesCreated   Recipe[]
+  craftOrders      CraftOrder[]       @relation("CraftOrderArtisan")
+  craftOrdersMade  CraftOrder[]       @relation("CraftOrderAuthor")
+  trades           Trade[]
+  treasuryMoves    TreasuryMovement[]
+  passageRightsGranted PassageRight[] @relation("PassageGrantedBy")
+  passageRightsHeld    PassageRight[] @relation("PassageBeneficiary")
+  patrolsLed       Patrol[]           @relation("PatrolAuthor")
+  patrolsValidated Patrol[]           @relation("PatrolValidator")
+  harvestAsked     HarvestPermit[]    @relation("HarvestRequester")
+  harvestGranted   HarvestPermit[]    @relation("HarvestIssuer")
+  contracts        Contract[]
+  alliances        Alliance[]
+  correspondences  Correspondence[]
+  missionsAuthored Mission[]          @relation("MissionAuthor")
+  objectives       Objective[]
+  reports          Report[]
+  announcements    Announcement[]
+  events           Event[]
+  rsvps            EventRSVP[]
+  attendances      Attendance[]
+  dutySessions     DutySession[]
+  productions      ProductionEntry[]
+  roleRequestsSeen RoleRequest[]      @relation("RoleRequestReviewer")
+  sanctionsGot     Sanction[]         @relation("SanctionTarget")
+  sanctionsGave    Sanction[]         @relation("SanctionAuthor")
+  tickets          Ticket[]           @relation("TicketAuthor")
+  ticketsAssigned  Ticket[]           @relation("TicketAssignee")
+  ticketMessages   TicketMessage[]
+  galleryItems     GalleryItem[]
+  auditLogs        AuditLog[]
+
+  @@index([rankId])
+  @@index([branchId])
+  @@index([status])
+}
+
+model UserMetier {
+  id       String  @id @default(cuid())
+  userId   String
+  metierId String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metier   Metier  @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  /// apprenti | compagnon | artisan | maitre
+  niveau   String  @default("apprenti")
+  isPrimary Boolean @default(false)
+
+  @@unique([userId, metierId])
+  @@index([metierId])
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ÉCONOMIE — matières, prix, recettes, inventaires
+// ─────────────────────────────────────────────────────────────
+
+/// Matière ou objet du référentiel (Annexe A/C).
+model Material {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  label       String
+  /// Minerais & Métaux | Bois | Peaux & Cuir | Tissus | Alchimie | Nourriture | Gemmes & Âmes | Produits finis
+  category    String
+  subcategory String  @default("")
+  /// sous-état : brut | minerai | lingot | raffine | transforme | fini
+  state       String  @default("brut")
+  unit        String  @default("unité")
+  description String  @default("")
+  icon        String  @default("")
+  isCraftable Boolean @default(false)
+  position    Int     @default(0)
+
+  prices       MarketPrice[]
+  recipes      Recipe[]        @relation("RecipeOutput")
+  usedIn       RecipeItem[]
+  inventory    InventoryItem[]
+  movements    InventoryMovement[]
+  harvests     HarvestPermit[]
+  prixMetiers  MetierPrice[]
+  productions  ProductionEntry[]
+
+  @@index([category])
+}
+
+/// Une saisie de prix par un membre — construit le « cours du marché ».
+model MarketPrice {
+  id         String   @id @default(cuid())
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  price      Float
+  date       DateTime @default(now())
+  source     String   @default("")
+  note       String   @default("")
+  memberId   String?
+  member     User?    @relation(fields: [memberId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([materialId, date])
+}
+
+/// Nomenclature d'un objet fabricable (bill of materials).
+model Recipe {
+  id              String   @id @default(cuid())
+  label           String
+  metierId        String
+  metier          Metier   @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  outputMaterialId String
+  outputMaterial  Material @relation("RecipeOutput", fields: [outputMaterialId], references: [id], onDelete: Cascade)
+  outputQty       Int      @default(1)
+  station         String   @default("")
+  /// true = palier de transformation matière→matière (fonte, tannage…)
+  isChain         Boolean  @default(false)
+  description     String   @default("")
+  notes           String   @default("")
+  createdById     String?
+  createdBy       User?    @relation(fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  items       RecipeItem[]
+  attachments Attachment[]
+  craftOrders CraftOrder[]
+
+  @@index([metierId])
+  @@index([outputMaterialId])
+}
+
+model RecipeItem {
+  id         String   @id @default(cuid())
+  recipeId   String
+  recipe     Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  quantity   Float    @default(1)
+
+  @@index([recipeId])
+}
+
+/// Ligne d'inventaire. Propriétaire = la Maison, un membre, ou un métier.
+model InventoryItem {
+  id          String  @id @default(cuid())
+  /// maison | membre | metier
+  ownerType   String
+  ownerUserId String?
+  ownerUser   User?   @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  ownerMetierId String?
+  ownerMetier Metier? @relation(fields: [ownerMetierId], references: [id], onDelete: Cascade)
+
+  materialId  String?
+  material    Material? @relation(fields: [materialId], references: [id])
+  customLabel String    @default("")
+  category    String    @default("")
+  state       String    @default("")
+  quantity    Float     @default(0)
+  unit        String    @default("unité")
+  unitValue   Float?
+  seuilBas    Float?
+  notes       String    @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements   InventoryMovement[]
+  attachments Attachment[]
+
+  @@index([ownerType])
+  @@index([ownerUserId])
+  @@index([ownerMetierId])
+}
+
+model InventoryMovement {
+  id              String  @id @default(cuid())
+  inventoryItemId String?
+  inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  ownerType       String  @default("maison")
+  materialId      String?
+  material        Material? @relation(fields: [materialId], references: [id])
+  label           String
+  /// positif = entrée, négatif = sortie
+  delta           Float
+  reason          String   @default("")
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  createdAt       DateTime @default(now())
+
+  @@index([inventoryItemId])
+  @@index([createdAt])
+}
+
+/// Fichier stocké en base : portable sur tout hébergeur, aucun disque requis.
+model Attachment {
+  id        String   @id @default(cuid())
+  filename  String
+  mime      String
+  size      Int
+  data      Bytes
+  caption   String   @default("")
+  uploadedById String?
+  uploadedBy   User?  @relation(fields: [uploadedById], references: [id])
+  createdAt DateTime @default(now())
+
+  inventoryItemId String?
+  inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  recipeId        String?
+  recipe          Recipe?        @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  craftOrderId    String?
+  craftOrder      CraftOrder?    @relation(fields: [craftOrderId], references: [id], onDelete: Cascade)
+  galleryItemId   String?
+  galleryItem     GalleryItem?   @relation(fields: [galleryItemId], references: [id], onDelete: Cascade)
+  correspondenceId String?
+  correspondence  Correspondence? @relation(fields: [correspondenceId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────────────────────
+//  COMMANDES & IMPAYÉS  (gabarit réel du Discord)
+// ─────────────────────────────────────────────────────────────
+
+model CraftOrder {
+  id String @id @default(cuid())
+
+  // Client
+  clientNomRp   String
+  clientMaison  String @default("")
+  clientContact String @default("")
+
+  // Commande
+  artisanId               String?
+  artisan                 User?   @relation("CraftOrderArtisan", fields: [artisanId], references: [id])
+  metierId                String?
+  metier                  Metier? @relation(fields: [metierId], references: [id])
+  objets                  String
+  quantite                Int     @default(1)
+  materiauxFournisParClient Boolean @default(false)
+  materiauxAFournir       String  @default("")
+
+  // Paiement (Septims)
+  prixConvenu  Int @default(0)
+  acompte      Int @default(0)
+  /// dénormalisé pour filtrer/trier les impayés efficacement
+  resteAPayer  Int @default(0)
+
+  // Suivi
+  dateCommande        DateTime @default(now())
+  dateLivraisonPrevue DateTime?
+  /// en_attente | en_fabrication | prete | livree | annulee
+  etat                String   @default("en_attente")
+  observations        String   @default("")
+
+  // Aide au chiffrage
+  recipeId          String?
+  recipe            Recipe? @relation(fields: [recipeId], references: [id])
+  coutMatiereEstime Float?
+
+  createdById String?
+  createdBy   User?    @relation("CraftOrderAuthor", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attachments Attachment[]
+  trades      Trade[]
+
+  @@index([etat])
+  @@index([resteAPayer])
+  @@index([artisanId])
+}
+
+model Trade {
+  id            String   @id @default(cuid())
+  /// achat | vente | troc
+  type          String
+  partieExterne String
+  biens         String
+  quantites     String   @default("")
+  montant       Int      @default(0)
+  date          DateTime @default(now())
+  negociateurId String?
+  negociateur   User?    @relation(fields: [negociateurId], references: [id])
+  /// propose | negocie | conclu | annule
+  statut        String   @default("propose")
+  craftOrderId  String?
+  craftOrder    CraftOrder? @relation(fields: [craftOrderId], references: [id])
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TRÉSORERIE  (privé — Conseil / Intendant)
+// ─────────────────────────────────────────────────────────────
+
+/// Ligne unique (id = "maison") : le coffre de la Maison.
+model Treasury {
+  id            String   @id @default("maison")
+  septims       Int      @default(0)
+  valeurStock   Int      @default(0)
+  responsableId String?
+  note          String   @default("")
+  updatedAt     DateTime @updatedAt
+}
+
+model TreasuryMovement {
+  id        String   @id @default(cuid())
+  /// positif = entrée, négatif = sortie
+  montant   Int
+  motif     String
+  categorie String   @default("divers")
+  date      DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  soldeApres Int     @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+// ─────────────────────────────────────────────────────────────
+//  REGISTRES — Militaire / Garde-Chasse / Artisanat
+// ─────────────────────────────────────────────────────────────
+
+model PassageRight {
+  id              String    @id @default(cuid())
+  beneficiaireId  String?
+  beneficiaire    User?     @relation("PassageBeneficiary", fields: [beneficiaireId], references: [id])
+  beneficiaireNom String    @default("")
+  typeDroit       String
+  nombreDroits    Int       @default(1)
+  dateOctroi      DateTime  @default(now())
+  expiration      DateTime?
+  accordeParId    String?
+  accordePar      User?     @relation("PassageGrantedBy", fields: [accordeParId], references: [id])
+  motif           String    @default("")
+  /// actif | expire | revoque
+  statut          String    @default("actif")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([statut])
+}
+
+model Patrol {
+  id           String    @id @default(cuid())
+  patrouilleurs String
+  circleId     String?
+  circle       Circle?   @relation(fields: [circleId], references: [id])
+  zone         String
+  date         DateTime  @default(now())
+  heureDebut   String    @default("")
+  heureFin     String    @default("")
+  /// routes | frontieres | traque | autre
+  type         String    @default("routes")
+  incidents    String    @default("")
+  /// planifiee | effectuee | annulee
+  statut       String    @default("planifiee")
+  authorId     String?
+  author       User?     @relation("PatrolAuthor", fields: [authorId], references: [id])
+  valideParId  String?
+  validePar    User?     @relation("PatrolValidator", fields: [valideParId], references: [id])
+  valideLe     DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([statut])
+}
+
+model HarvestPermit {
+  id                 String    @id @default(cuid())
+  demandeurId        String?
+  demandeur          User?     @relation("HarvestRequester", fields: [demandeurId], references: [id])
+  demandeurNom       String    @default("")
+  /// plantes | minerais | bois | champignons | autre
+  categorie          String
+  materialId         String?
+  material           Material? @relation(fields: [materialId], references: [id])
+  ressource          String    @default("")
+  quantiteAutorisee  Float     @default(0)
+  unite              String    @default("unité")
+  zone               String    @default("")
+  dateEmission       DateTime  @default(now())
+  validiteJusquau    DateTime?
+  delivreParId       String?
+  delivrePar         User?     @relation("HarvestIssuer", fields: [delivreParId], references: [id])
+  /// en_attente | accorde | refuse | expire
+  statut             String    @default("en_attente")
+  motif              String    @default("")
+  /// quantité déjà déclarée récoltée (rattaché au stash)
+  quantiteRecoltee   Float     @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([statut])
+}
+
+// ─────────────────────────────────────────────────────────────
+//  DIPLOMATIE
+// ─────────────────────────────────────────────────────────────
+
+model Contract {
+  id            String    @id @default(cuid())
+  titre         String
+  parties       String
+  objet         String    @default("")
+  clauses       String    @default("")
+  contrepartie  String    @default("")
+  montant       Int       @default(0)
+  dateSignature DateTime?
+  echeance      DateTime?
+  signeParId    String?
+  signePar      User?     @relation(fields: [signeParId], references: [id])
+  /// brouillon | signe | rompu | expire
+  statut        String    @default("brouillon")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Alliance {
+  id          String   @id @default(cuid())
+  faction     String
+  nature      String   @default("")
+  termes      String   @default("")
+  date        DateTime @default(now())
+  referentId  String?
+  referent    User?    @relation(fields: [referentId], references: [id])
+  /// pressentie | active | suspendue | rompue
+  statut      String   @default("pressentie")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Correspondence {
+  id           String   @id @default(cuid())
+  expediteur   String
+  destinataire String
+  date         DateTime @default(now())
+  objet        String
+  contenu      String   @default("")
+  /// recue | envoyee | brouillon
+  statut       String   @default("recue")
+  authorId     String?
+  author       User?    @relation(fields: [authorId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  attachments Attachment[]
+}
+
+// ─────────────────────────────────────────────────────────────
+//  OPÉRATIONS
+// ─────────────────────────────────────────────────────────────
+
+model Mission {
+  id            String    @id @default(cuid())
+  titre         String
+  branchId      String?
+  branch        Branch?   @relation(fields: [branchId], references: [id])
+  assignes      String    @default("")
+  objectif      String    @default("")
+  date          DateTime  @default(now())
+  lieu          String    @default("")
+  /// planifiee | en_cours | reussie | echouee
+  statut        String    @default("planifiee")
+  autoriseParId String?
+  autorisePar   User?     @relation("MissionAuthor", fields: [autoriseParId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  reports Report[]
+}
+
+model Objective {
+  id           String    @id @default(cuid())
+  intitule     String
+  description  String    @default("")
+  echeance     DateTime?
+  avancement   Int       @default(0)
+  responsableId String?
+  responsable  User?     @relation(fields: [responsableId], references: [id])
+  /// en_cours | atteint | abandonne
+  statut       String    @default("en_cours")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  titre     String   @default("")
+  auteurId  String?
+  auteur    User?    @relation(fields: [auteurId], references: [id])
+  missionId String?
+  mission   Mission? @relation(fields: [missionId], references: [id])
+  date      DateTime @default(now())
+  resume    String
+  pertes    String   @default("")
+  butin     String   @default("")
+  suites    String   @default("")
+  statut    String   @default("depose")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────
+//  VIE DE LA MAISON
+// ─────────────────────────────────────────────────────────────
+
+model Announcement {
+  id        String   @id @default(cuid())
+  titre     String
+  contenu   String
+  auteurId  String?
+  auteur    User?    @relation(fields: [auteurId], references: [id])
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  epingle   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  titre       String
+  description String   @default("")
+  date        DateTime
+  heure       String   @default("")
+  heureRdv    String   @default("")
+  lieu        String   @default("")
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  statut      String   @default("planifie")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rsvps EventRSVP[]
+}
+
+model EventRSVP {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// present | absent | peut_etre
+  reponse String @default("peut_etre")
+  note    String @default("")
+
+  @@unique([eventId, userId])
+}
+
+/// Prise de poste : un membre déclare qu'il est en jeu et disponible.
+/// Différent d'`Attendance`, qui consigne les absences annoncées à l'avance.
+model DutySession {
+  id      String    @id @default(cuid())
+  userId  String
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  debutLe DateTime  @default(now())
+  finLe   DateTime?
+  /// disponible | en_patrouille | occupe
+  etat    String    @default("disponible")
+  note    String    @default("")
+  /// Patrouille à laquelle ce poste a été rattaché, le cas échéant.
+  patrolId String?
+
+  @@index([userId, finLe])
+  @@index([debutLe])
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// absence | retour
+  type      String   @default("absence")
+  dateDebut DateTime
+  dateFin   DateTime?
+  motif     String   @default("")
+  /// declaree | validee | refusee
+  statut    String   @default("declaree")
+  createdAt DateTime @default(now())
+}
+
+model GalleryItem {
+  id          String   @id @default(cuid())
+  titre       String
+  description String   @default("")
+  auteurId    String?
+  auteur      User?    @relation(fields: [auteurId], references: [id])
+  createdAt   DateTime @default(now())
+
+  attachments Attachment[]
+}
+
+// ─────────────────────────────────────────────────────────────
+//  GOUVERNANCE
+// ─────────────────────────────────────────────────────────────
+
+model RoleRequest {
+  id           String   @id @default(cuid())
+  nomRp        String
+  discordTag   String   @default("")
+  contact      String   @default("")
+  /// Identifiants choisis par le candidat. Le mot de passe n'est jamais
+  /// stocké en clair : seul son empreinte bcrypt est conservée, et elle est
+  /// reprise telle quelle à la création du compte si la demande est acceptée.
+  email        String   @default("")
+  loginSouhaite String  @default("")
+  passwordHash String?
+  rangSouhaite String   @default("")
+  gradeSouhaite String  @default("")
+  branche      String   @default("")
+  cercle       String   @default("")
+  metiers      String   @default("")
+  presentePar  String   @default("")
+  message      String   @default("")
+  /// en_attente | examinee | acceptee | refusee
+  statut       String   @default("en_attente")
+  examineParId String?
+  examinePar   User?    @relation("RoleRequestReviewer", fields: [examineParId], references: [id])
+  decisionNote String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([statut])
+}
+
+model Sanction {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation("SanctionTarget", fields: [userId], references: [id], onDelete: Cascade)
+  /// avertissement | retrogradation | exclusion_temporaire | bannissement
+  type        String
+  motif       String
+  date        DateTime  @default(now())
+  finLe       DateTime?
+  decideParId String?
+  decidePar   User?     @relation("SanctionAuthor", fields: [decideParId], references: [id])
+  /// active | levee | expiree
+  statut      String    @default("active")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Ticket {
+  id         String   @id @default(cuid())
+  titre      String
+  categorie  String   @default("question")
+  contenu    String
+  auteurId   String?
+  auteur     User?    @relation("TicketAuthor", fields: [auteurId], references: [id])
+  assigneId  String?
+  assigne    User?    @relation("TicketAssignee", fields: [assigneId], references: [id])
+  /// ouvert | en_cours | resolu | ferme
+  statut     String   @default("ouvert")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  messages TicketMessage[]
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  contenu   String
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String   @default("")
+  entityId   String   @default("")
+  label      String   @default("")
+  details    String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType])
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PRODUCTION — coûts par métier, revenus, taxe, comptes rendus
+// ─────────────────────────────────────────────────────────────
+
+/// Prix d'achat d'une matière, saisi par le métier qui l'achète.
+/// Prime sur le cours du marché dans les calculs de coût de cet atelier.
+model MetierPrice {
+  id          String   @id @default(cuid())
+  metierId    String
+  metier      Metier   @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  materialId  String
+  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  prixAchat   Float
+  note        String   @default("")
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([metierId, materialId])
+  @@index([metierId])
+}
+
+/// Une fabrication et ce qu'elle a coûté, rapporté et laissé à la Maison.
+/// Les montants sont figés à l'instant du craft : un changement de cours
+/// ou de taux de taxe ne réécrit pas l'histoire.
+model ProductionEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metierId   String
+  metier     Metier   @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  recipeId   String?
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id])
+
+  quantite     Float
+  /// maison | membre — d'où venaient les composants
+  source       String   @default("membre")
+  prixUnitaire Float
+  revenuBrut   Int
+  tauxTaxe     Float    @default(0.35)
+  taxe         Int
+  revenuNet    Int
+  coutMatiere  Float    @default(0)
+  benefice     Int      @default(0)
+  note         String   @default("")
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([metierId, createdAt])
+  @@index([createdAt])
+}
+
+/// Compte rendu figé, journalier ou hebdomadaire, versé aux Archives.
+model Rapport {
+  id       String  @id @default(cuid())
+  /// Clé stable : « jour-2026-08-05-forgeron » ou « semaine-2026-S32-maison »
+  cle      String  @unique
+  /// jour | semaine
+  periode  String
+  debut    DateTime
+  fin      DateTime
+  metierId String?
+  metier   Metier? @relation(fields: [metierId], references: [id], onDelete: Cascade)
+
+  nbCrafts    Int   @default(0)
+  nbArtisans  Int   @default(0)
+  quantite    Float @default(0)
+  revenuBrut  Int   @default(0)
+  taxe        Int   @default(0)
+  revenuNet   Int   @default(0)
+  coutMatiere Int   @default(0)
+  benefice    Int   @default(0)
+  /// Détail sérialisé : ventilation par membre et par objet
+  details     String @default("")
+  createdAt   DateTime @default(now())
+
+  @@index([periode, debut])
+  @@index([metierId])
+}
+
+/// Compteur d'échecs de connexion, pour le blocage temporaire.
+/// Une entrée par identifiant essayé et une par adresse : bloquer l'un
+/// n'enferme pas les autres membres derrière la même adresse.
+model LoginAttempt {
+  id           String    @id @default(cuid())
+  /// login | ip
+  type         String
+  cle          String
+  echecs       Int       @default(0)
+  bloqueJusqua DateTime?
+  dernierEchec DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([type, cle])
+  @@index([bloqueJusqua])
+}
+
+/// Contenu éditable des pages institutionnelles (règlement, histoire…).
+model SitePage {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  titre     String
+  contenu   String
+  updatedAt DateTime @updatedAt
+}

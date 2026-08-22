@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(npm install --no-audit --no-fund 2>&1)",
+      "PowerShell(npx prisma db push --skip-generate 2>&1)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(npx next build 2>&1)",
+      "PowerShell($env:NEXT_DIST_DIR='.next-verif'; npx next build 2>&1 | Select-Object -Last 35)"
+    ]
+  }
+}

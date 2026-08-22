@@ -1,0 +1,23 @@
+node_modules/
+.next/
+.next-verif/
+.next-prod/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Base de données locale
+prisma/*.db
+prisma/*.db-journal
+prisma/migrations/dev.db*
+
+# Secrets
+.env
+.env.local
+.env*.local
+
+# Divers
+.DS_Store
+Thumbs.db
+*.log

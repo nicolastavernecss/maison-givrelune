@@ -1,0 +1,450 @@
+@import "tailwindcss";
+
+/* ══════════════════════════════════════════════════════════════
+   MAISON GIVRELUNE — direction artistique
+   Bleu nuit & noir profond · parchemin · argent glacé · or discret
+   ══════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Nuit : les fonds ───────────────────────────────────── */
+  --color-nuit-950: #05080f;
+  --color-nuit-900: #080d18;
+  --color-nuit-850: #0b1220;
+  --color-nuit-800: #101a2e;
+  --color-nuit-700: #17233d;
+  --color-nuit-600: #1f2f4f;
+  --color-nuit-500: #2a3d63;
+
+  /* ── Givre : blanc glacé, textes et accents froids ──────── */
+  --color-givre-50: #f4f9fd;
+  --color-givre-100: #e6f1f9;
+  --color-givre-200: #cbdff0;
+  --color-givre-300: #a5c5e0;
+  --color-givre-400: #7ba4c8;
+  --color-givre-500: #5a83a9;
+  --color-givre-600: #436685;
+
+  /* ── Argent : bordures, séparateurs ─────────────────────── */
+  --color-argent-200: #dce5ee;
+  --color-argent-300: #bcccdc;
+  --color-argent-400: #93a7bd;
+  --color-argent-500: #6d8299;
+
+  /* ── Or : réservé aux gradés et aux valeurs ─────────────── */
+  --color-or-200: #f0e0b8;
+  --color-or-300: #e3cd94;
+  --color-or-400: #d2b873;
+  --color-or-500: #bd9c4d;
+  --color-or-600: #98793a;
+  --color-or-700: #6f5726;
+
+  /* ── Parchemin : surfaces documentaires ─────────────────── */
+  --color-parchemin-50: #faf5e9;
+  --color-parchemin-100: #f2e9d5;
+  --color-parchemin-200: #e6d8bb;
+  --color-parchemin-300: #d3c09b;
+  --color-parchemin-700: #6b5636;
+  --color-parchemin-800: #4a3a22;
+  --color-parchemin-900: #2f2415;
+
+  /* ── Branches ───────────────────────────────────────────── */
+  --color-militaire: #b5563f;
+  --color-garde: #5f8f6a;
+  --color-commerce: #c8a04a;
+  --color-artisanat: #7f8fb0;
+
+  /* ── Statuts ────────────────────────────────────────────── */
+  --color-succes: #5f9e73;
+  --color-attente: #c9a34e;
+  --color-alerte: #cd8442;
+  --color-danger: #bf5a4c;
+  --color-actif: #5b8fc0;
+
+  /* ── Typographies ───────────────────────────────────────── */
+  --font-imperial: var(--police-imperial), "Trajan Pro", "Times New Roman", serif;
+  --font-corps: var(--police-corps), ui-sans-serif, system-ui, sans-serif;
+  --font-recit: var(--police-recit), Georgia, serif;
+
+  /* ── Rythme ─────────────────────────────────────────────── */
+  --radius-lame: 2px;
+  --radius-carte: 4px;
+}
+
+/* ── Textures ─────────────────────────────────────────────── */
+:root {
+  --texture-bruit: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23b)'/%3E%3C/svg%3E");
+  --texture-pierre: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='5'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23p)'/%3E%3C/svg%3E");
+  color-scheme: dark;
+}
+
+* {
+  border-color: color-mix(in oklab, var(--color-argent-500) 16%, transparent);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-nuit-950);
+  color: var(--color-givre-100);
+  font-family: var(--font-corps);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Voile de nuit polaire : dégradés froids + grain, fixé derrière tout */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(1100px 620px at 12% -8%, color-mix(in oklab, var(--color-nuit-600) 55%, transparent), transparent 62%),
+    radial-gradient(900px 520px at 92% 4%, color-mix(in oklab, var(--color-givre-600) 20%, transparent), transparent 60%),
+    radial-gradient(1300px 800px at 50% 108%, color-mix(in oklab, var(--color-nuit-800) 70%, transparent), transparent 65%),
+    linear-gradient(180deg, var(--color-nuit-950) 0%, var(--color-nuit-900) 45%, var(--color-nuit-950) 100%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--texture-bruit);
+  opacity: 0.035;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-or-500) 35%, transparent);
+  color: var(--color-givre-50);
+}
+
+/* ── Barres de défilement ─────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-nuit-950);
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-nuit-500) 80%, transparent);
+  border: 3px solid var(--color-nuit-950);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-givre-600);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Composants d'ambiance
+   ══════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* Titres impériaux */
+  .titre-imperial {
+    font-family: var(--font-imperial);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+
+  .sur-titre {
+    font-family: var(--font-imperial);
+    font-size: 0.68rem;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--color-or-400);
+  }
+
+  /* Carte de base : pierre sombre, filet argent, lueur froide */
+  .carte {
+    position: relative;
+    background:
+      linear-gradient(
+        160deg,
+        color-mix(in oklab, var(--color-nuit-800) 92%, transparent),
+        color-mix(in oklab, var(--color-nuit-900) 96%, transparent)
+      );
+    border: 1px solid color-mix(in oklab, var(--color-argent-500) 18%, transparent);
+    border-radius: var(--radius-carte);
+    box-shadow:
+      0 1px 0 0 color-mix(in oklab, var(--color-givre-200) 6%, transparent) inset,
+      0 18px 40px -28px rgb(0 0 0 / 0.9);
+  }
+
+  .carte-texture::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: var(--texture-pierre);
+    opacity: 0.05;
+    pointer-events: none;
+    mix-blend-mode: soft-light;
+  }
+
+  /* Surface parchemin : règlement, contrats, lore */
+  .parchemin {
+    position: relative;
+    background:
+      radial-gradient(120% 90% at 50% 0%, var(--color-parchemin-50), var(--color-parchemin-100) 55%, var(--color-parchemin-200) 100%);
+    color: var(--color-parchemin-900);
+    border: 1px solid color-mix(in oklab, var(--color-parchemin-700) 40%, transparent);
+    border-radius: var(--radius-carte);
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--color-or-700) 25%, transparent),
+      0 24px 60px -30px rgb(0 0 0 / 0.85);
+  }
+
+  .parchemin::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: var(--texture-bruit);
+    opacity: 0.14;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+
+  /* Champs de saisie */
+  .champ {
+    width: 100%;
+    background: color-mix(in oklab, var(--color-nuit-950) 72%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-argent-500) 22%, transparent);
+    border-radius: var(--radius-lame);
+    padding: 0.55rem 0.75rem;
+    color: var(--color-givre-100);
+    font-size: 0.9rem;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  }
+  .champ::placeholder {
+    color: color-mix(in oklab, var(--color-argent-500) 75%, transparent);
+  }
+  .champ:focus {
+    outline: none;
+    border-color: color-mix(in oklab, var(--color-or-400) 65%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-or-500) 14%, transparent);
+    background: color-mix(in oklab, var(--color-nuit-900) 82%, transparent);
+  }
+  .champ:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  select.champ option {
+    background: var(--color-nuit-850);
+    color: var(--color-givre-100);
+  }
+
+  /* Liens de navigation */
+  .lien-nav {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.42rem 0.7rem;
+    border-radius: var(--radius-lame);
+    font-size: 0.855rem;
+    color: color-mix(in oklab, var(--color-givre-200) 78%, transparent);
+    transition: color 150ms ease, background-color 150ms ease;
+  }
+  .lien-nav:hover {
+    color: var(--color-givre-50);
+    background: color-mix(in oklab, var(--color-nuit-700) 55%, transparent);
+  }
+  .lien-nav[data-actif="true"] {
+    color: var(--color-or-200);
+    background: color-mix(in oklab, var(--color-nuit-700) 75%, transparent);
+  }
+  .lien-nav[data-actif="true"]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 18%;
+    bottom: 18%;
+    width: 2px;
+    background: linear-gradient(180deg, transparent, var(--color-or-400), transparent);
+  }
+
+  /* Tableaux de données */
+  .tableau {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.855rem;
+  }
+  .tableau thead th {
+    font-family: var(--font-imperial);
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-or-400);
+    text-align: left;
+    padding: 0.6rem 0.85rem;
+    white-space: nowrap;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-or-600) 30%, transparent);
+    background: color-mix(in oklab, var(--color-nuit-900) 60%, transparent);
+  }
+  .tableau tbody td {
+    padding: 0.62rem 0.85rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-argent-500) 11%, transparent);
+    vertical-align: middle;
+  }
+  .tableau tbody tr {
+    transition: background-color 140ms ease;
+  }
+  .tableau tbody tr:hover {
+    background: color-mix(in oklab, var(--color-nuit-700) 42%, transparent);
+  }
+  .tableau tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Prose de récit (lore, règlement, annonces) */
+  .recit {
+    font-family: var(--font-recit);
+    font-size: 1.02rem;
+    line-height: 1.78;
+  }
+  .recit h2 {
+    font-family: var(--font-imperial);
+    font-size: 1.18rem;
+    letter-spacing: 0.05em;
+    margin: 2rem 0 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid color-mix(in oklab, currentColor 18%, transparent);
+  }
+  .recit h2:first-child {
+    margin-top: 0;
+  }
+  .recit h3 {
+    font-family: var(--font-imperial);
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+    margin: 1.4rem 0 0.5rem;
+  }
+  .recit p {
+    margin-bottom: 0.95rem;
+  }
+  .recit strong {
+    font-weight: 700;
+  }
+  .recit blockquote {
+    margin: 1.2rem 0;
+    padding-left: 1.1rem;
+    border-left: 2px solid color-mix(in oklab, var(--color-or-500) 60%, transparent);
+    font-style: italic;
+    opacity: 0.92;
+  }
+  .recit ul {
+    margin: 0 0 1rem 1.1rem;
+    list-style: none;
+  }
+  .recit ul li::before {
+    content: "❖";
+    margin-right: 0.6rem;
+    font-size: 0.7em;
+    vertical-align: middle;
+    opacity: 0.6;
+  }
+}
+
+/* ── Utilitaires ──────────────────────────────────────────── */
+
+@utility bordure-givre {
+  border: 1px solid color-mix(in oklab, var(--color-argent-500) 18%, transparent);
+}
+
+@utility lueur-or {
+  box-shadow: 0 0 26px -6px color-mix(in oklab, var(--color-or-500) 45%, transparent);
+}
+
+/* Filet ornemental horizontal */
+@utility filet {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--color-or-500) 55%, transparent) 25%,
+    color-mix(in oklab, var(--color-or-400) 75%, transparent) 50%,
+    color-mix(in oklab, var(--color-or-500) 55%, transparent) 75%,
+    transparent
+  );
+}
+
+/* ── Animations ───────────────────────────────────────────── */
+
+@keyframes monter {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes apparaitre {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scintiller {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.animer-monter {
+  animation: monter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animer-apparaitre {
+  animation: apparaitre 500ms ease both;
+}
+.scintille {
+  animation: scintiller 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Impression : les registres doivent pouvoir se sortir ── */
+@media print {
+  body::before,
+  body::after {
+    display: none;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .sans-impression {
+    display: none !important;
+  }
+  .carte {
+    border: 1px solid #999;
+    background: #fff;
+    box-shadow: none;
+  }
+}
