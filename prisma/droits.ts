@@ -18,6 +18,15 @@ async function main() {
     console.log(`   ${r.label.padEnd(14)} ${String(r.permissions.length).padStart(3)} droits`);
   }
 
+  console.log("\n❖ Droits ajoutés par la BRANCHE (tous ses membres, sans condition de grade)");
+  for (const b of await prisma.branch.findMany({
+    orderBy: { position: "asc" },
+    include: { permissions: { include: { permission: true } } },
+  })) {
+    const cles = b.permissions.map((x) => x.permission.key);
+    console.log(`   ${b.label.padEnd(14)} ${cles.join(", ") || "—"}`);
+  }
+
   console.log("\n❖ Droits ajoutés par le GRADE (chefs de branche)");
   for (const g of await prisma.grade.findMany({
     where: { level: 1 },

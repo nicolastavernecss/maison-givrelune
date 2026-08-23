@@ -56,6 +56,7 @@ export default async function AdminMembres({
         where: { id: f.droits },
         include: {
           rank: { include: { permissions: { include: { permission: true } } } },
+          branch: { include: { permissions: { include: { permission: true } } } },
           grade: { include: { permissions: { include: { permission: true } } } },
           councilRole: { include: { permissions: { include: { permission: true } } } },
           permissions: { include: { permission: true } },
@@ -63,10 +64,13 @@ export default async function AdminMembres({
       })
     : null;
 
-  // Droits hérités du rang, du grade et de la fonction de Conseil.
+  // Droits hérités du rang, de la branche, du grade et de la fonction de Conseil.
+  // Même union que celle calculée à la connexion : ce tableau doit montrer
+  // exactement ce dont le membre dispose, sans quoi il induirait en erreur.
   const herites = new Set<string>();
   if (cibleDroits) {
     for (const rp of cibleDroits.rank.permissions) herites.add(rp.permission.key);
+    for (const bp of cibleDroits.branch?.permissions ?? []) herites.add(bp.permission.key);
     for (const gp of cibleDroits.grade?.permissions ?? []) herites.add(gp.permission.key);
     for (const cp of cibleDroits.councilRole?.permissions ?? []) herites.add(cp.permission.key);
   }

@@ -49,6 +49,7 @@ model Branch {
   users        User[]
   missions     Mission[]
   announcements Announcement[]
+  permissions  BranchPermission[]
 }
 
 /// Grade au sein d'une branche. level 1 = chef de branche.
@@ -128,6 +129,7 @@ model Permission {
   ranks    RankPermission[]
   grades   GradePermission[]
   councils CouncilPermission[]
+  branches BranchPermission[]
   users    UserPermission[]
 }
 
@@ -156,6 +158,18 @@ model CouncilPermission {
   permission    Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([councilRoleId, permissionId])
+}
+
+/// Droit accordé à toute une branche, quel que soit le grade de ses membres.
+/// Sert aux prérogatives qui tiennent au métier de la branche et non à
+/// l'ancienneté : la Commerciale tient le stock commun, par exemple.
+model BranchPermission {
+  branchId     String
+  permissionId String
+  branch       Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([branchId, permissionId])
 }
 
 /// Octroi ou retrait ponctuel, membre par membre.

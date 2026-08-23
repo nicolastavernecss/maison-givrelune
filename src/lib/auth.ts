@@ -29,7 +29,7 @@ export function hacherMotDePasse(mdp: string): Promise<string> {
 
 const INCLUDE = {
   rank: { include: { permissions: { include: { permission: true } } } },
-  branch: true,
+  branch: { include: { permissions: { include: { permission: true } } } },
   grade: { include: { permissions: { include: { permission: true } }, branch: true } },
   councilRole: { include: { permissions: { include: { permission: true } } } },
   circle: true,
@@ -45,10 +45,17 @@ export type Membre = MembreBrut & {
   estAdmin: boolean;
 };
 
-/** Union rang + grade + fonction de Conseil, corrigée par les octrois individuels. */
+/**
+ * Union rang + branche + grade + fonction de Conseil, corrigée par les
+ * octrois individuels.
+ *
+ * La branche porte les prérogatives qui tiennent au métier et non à
+ * l'ancienneté : elles valent pour tous ses membres, même sans grade.
+ */
 function calculerDroits(u: MembreBrut): Set<string> {
   const droits = new Set<string>();
   for (const rp of u.rank.permissions) droits.add(rp.permission.key);
+  for (const bp of u.branch?.permissions ?? []) droits.add(bp.permission.key);
   for (const gp of u.grade?.permissions ?? []) droits.add(gp.permission.key);
   for (const cp of u.councilRole?.permissions ?? []) droits.add(cp.permission.key);
   // Les octrois/retraits individuels priment

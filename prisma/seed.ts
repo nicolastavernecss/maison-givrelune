@@ -177,6 +177,15 @@ async function main() {
     mage: [P.RECIPE_MANAGE, P.MATERIAL_MANAGE],
   };
 
+  // Le stock commun est l'affaire de tout le Conseil, pas du seul Intendant :
+  // chacune de ses fonctions peut le consulter et le corriger. On accorde les
+  // deux droits ensemble — modifier sans pouvoir ouvrir la page n'a pas de sens.
+  const STOCK_COMMUN = [P.INVENTORY_HOUSE_READ, P.INVENTORY_HOUSE_MANAGE];
+  for (const c of COUNCIL_ROLES) {
+    const liste = (councilPerms[c.key] ??= []);
+    for (const droit of STOCK_COMMUN) if (!liste.includes(droit)) liste.push(droit);
+  }
+
   for (const c of COUNCIL_ROLES) {
     const role = await prisma.councilRole.upsert({
       where: { key: c.key },
@@ -194,6 +203,15 @@ async function main() {
   const councils = new Map((await prisma.councilRole.findMany()).map((c) => [c.key, c]));
 
   // ── Branches & grades ──────────────────────────────────────
+  /**
+   * Droits valant pour toute une branche, quel que soit le grade de ses
+   * membres — y compris ceux qui n'en ont pas encore reçu.
+   */
+  const branchPerms: Record<string, string[]> = {
+    // La Commerciale vit du négoce : elle tient le stock commun de bout en bout.
+    commerciale: STOCK_COMMUN,
+  };
+
   /** Modules propres à chaque branche : le grade 1 valide, les grades 2-3 créent. */
   const branchModules: Record<string, { create: string[]; validate: string[] }> = {
     militaire: {
@@ -221,6 +239,14 @@ async function main() {
       update: branchData,
       create: branchData,
     });
+    await prisma.branchPermission.deleteMany({ where: { branchId: branch.id } });
+    await prisma.branchPermission.createMany({
+      data: permIds(branchPerms[b.key] ?? []).map((permissionId) => ({
+        branchId: branch.id,
+        permissionId,
+      })),
+    });
+
     const mods = branchModules[b.key];
     for (const g of grades) {
       const grade = await prisma.grade.upsert({
