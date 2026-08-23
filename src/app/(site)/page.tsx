@@ -12,7 +12,7 @@ const OUTILS = [
     icone: "permis",
     titre: "Permis & registres",
     texte:
-      "Droits de passage, patrouilles, permis de récolte : demandés, accordés, horodatés et signés. Plus rien ne se perd dans le fil du salon.",
+      "Patrouilles et permis de récolte : demandés, accordés, horodatés et signés. Plus rien ne se perd dans le fil du salon.",
   },
   {
     icone: "marche",

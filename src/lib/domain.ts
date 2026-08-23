@@ -30,9 +30,6 @@ export const PERMISSIONS = {
   ARCHIVES_READ: "archives.read",
 
   // Registres
-  PASSAGE_READ: "passage_rights.read",
-  PASSAGE_CREATE: "passage_rights.create",
-  PASSAGE_VALIDATE: "passage_rights.validate",
 
   PATROL_READ: "patrols.read",
   PATROL_CREATE: "patrols.create",
@@ -91,8 +88,6 @@ export const PERMISSIONS = {
   ATTENDANCE_READ: "attendance.read",
   ATTENDANCE_CREATE: "attendance.create",
   ATTENDANCE_VALIDATE: "attendance.validate",
-  GALLERY_READ: "gallery.read",
-  GALLERY_CREATE: "gallery.create",
 
   // Gouvernance
   ROLE_REQUEST_READ: "role_requests.read",
@@ -117,9 +112,6 @@ export const PERMISSION_CATALOG: {
   { key: PERMISSIONS.AUDIT_READ, label: "Consulter le journal d'audit", category: "Administration" },
   { key: PERMISSIONS.ARCHIVES_READ, label: "Consulter les archives", category: "Administration" },
 
-  { key: PERMISSIONS.PASSAGE_READ, label: "Lire les droits de passage", category: "Registres" },
-  { key: PERMISSIONS.PASSAGE_CREATE, label: "Enregistrer un droit de passage", category: "Registres" },
-  { key: PERMISSIONS.PASSAGE_VALIDATE, label: "Accorder / révoquer un droit de passage", category: "Registres" },
   { key: PERMISSIONS.PATROL_READ, label: "Lire les patrouilles", category: "Registres" },
   { key: PERMISSIONS.PATROL_CREATE, label: "Planifier une patrouille", category: "Registres" },
   { key: PERMISSIONS.PATROL_VALIDATE, label: "Valider une patrouille", category: "Registres" },
@@ -172,8 +164,6 @@ export const PERMISSION_CATALOG: {
   { key: PERMISSIONS.ATTENDANCE_READ, label: "Consulter les absences", category: "Vie de la Maison" },
   { key: PERMISSIONS.ATTENDANCE_CREATE, label: "Déclarer une absence", category: "Vie de la Maison" },
   { key: PERMISSIONS.ATTENDANCE_VALIDATE, label: "Valider une absence", category: "Vie de la Maison" },
-  { key: PERMISSIONS.GALLERY_READ, label: "Voir la galerie", category: "Vie de la Maison" },
-  { key: PERMISSIONS.GALLERY_CREATE, label: "Ajouter à la galerie", category: "Vie de la Maison" },
 
   { key: PERMISSIONS.ROLE_REQUEST_READ, label: "Lire les demandes de rôle", category: "Gouvernance" },
   { key: PERMISSIONS.ROLE_REQUEST_REVIEW, label: "Examiner une demande de rôle", category: "Gouvernance" },
@@ -200,11 +190,6 @@ export const STATUSES = {
     s("actif", "Actif", "succes"),
     s("essai", "Période d'essai", "attente"),
     s("archive", "Archivé", "neutre"),
-  ],
-  passage: [
-    s("actif", "Actif", "succes"),
-    s("expire", "Expiré", "neutre"),
-    s("revoque", "Révoqué", "danger"),
   ],
   patrouille: [
     s("planifiee", "Planifiée", "attente"),

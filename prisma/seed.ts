@@ -85,6 +85,13 @@ async function main() {
       create: perm,
     });
   }
+  // Un droit retiré du catalogue ne doit pas survivre en base : il resterait
+  // affiché comme une case orpheline dans la matrice des rôles, cochable et
+  // sans effet. La suppression emporte ses rattachements aux rangs, grades,
+  // fonctions et membres.
+  const obsoletes = await prisma.permission.deleteMany({ where: { key: { notIn: ALL_PERMS } } });
+  if (obsoletes.count > 0) console.log(`  ❖ ${obsoletes.count} droits obsolètes retirés`);
+
   const permsByKey = new Map(
     (await prisma.permission.findMany()).map((p) => [p.key, p.id]),
   );
@@ -120,7 +127,6 @@ async function main() {
       P.TICKET_CREATE,
       P.MARKET_CREATE,
       P.ATTENDANCE_CREATE,
-      P.GALLERY_CREATE,
       P.INVENTORY_OWN,
     ],
   };
@@ -158,8 +164,6 @@ async function main() {
     champion: [
       P.MISSION_VALIDATE,
       P.MISSION_CREATE,
-      P.PASSAGE_VALIDATE,
-      P.PASSAGE_CREATE,
       P.REPORT_VALIDATE,
       P.OBJECTIVE_VALIDATE,
     ],
@@ -215,8 +219,8 @@ async function main() {
   /** Modules propres à chaque branche : le grade 1 valide, les grades 2-3 créent. */
   const branchModules: Record<string, { create: string[]; validate: string[] }> = {
     militaire: {
-      create: [P.PASSAGE_CREATE, P.MISSION_CREATE, P.REPORT_CREATE, P.OBJECTIVE_CREATE],
-      validate: [P.PASSAGE_VALIDATE, P.MISSION_VALIDATE, P.REPORT_VALIDATE, P.OBJECTIVE_VALIDATE],
+      create: [P.MISSION_CREATE, P.REPORT_CREATE, P.OBJECTIVE_CREATE],
+      validate: [P.MISSION_VALIDATE, P.REPORT_VALIDATE, P.OBJECTIVE_VALIDATE],
     },
     garde_chasse: {
       create: [P.PATROL_CREATE, P.HARVEST_CREATE, P.REPORT_CREATE],
@@ -1110,42 +1114,7 @@ async function main() {
   }
 
   // ── Registres ──────────────────────────────────────────────
-  if (AVEC_DEMO && (await prisma.passageRight.count()) === 0) {
-    await prisma.passageRight.createMany({
-      data: [
-        {
-          beneficiaireId: users.get("eyva.pas-leger")!.id,
-          typeDroit: "Passage des cols du nord",
-          nombreDroits: 5,
-          dateOctroi: jours(30),
-          expiration: dansJours(30),
-          accordeParId: users.get("ulfr.brise-ecu")!.id,
-          motif: "Patrouilles régulières de la Grande Ramure",
-          statut: "actif",
-        },
-        {
-          beneficiaireNom: "Compagnie du Loup Gris",
-          typeDroit: "Escorte de convoi marchand",
-          nombreDroits: 2,
-          dateOctroi: jours(14),
-          expiration: dansJours(7),
-          accordeParId: users.get("ulfr.brise-ecu")!.id,
-          motif: "Livraison des armures commandées",
-          statut: "actif",
-        },
-        {
-          beneficiaireNom: "Marchand Ambulant Sven",
-          typeDroit: "Traversée du domaine",
-          nombreDroits: 1,
-          dateOctroi: jours(80),
-          expiration: jours(20),
-          accordeParId: users.get("taga.duriff")!.id,
-          motif: "Passage unique accordé par courtoisie",
-          statut: "expire",
-        },
-      ],
-    });
-
+  if (AVEC_DEMO && (await prisma.patrol.count()) === 0) {
     await prisma.patrol.createMany({
       data: [
         {
@@ -1230,7 +1199,7 @@ async function main() {
         },
       ],
     });
-    console.log("  ❖ Registres : droits de passage, patrouilles, permis de récolte");
+    console.log("  ❖ Registres : patrouilles, permis de récolte");
   }
 
   // ── Opérations & diplomatie ────────────────────────────────

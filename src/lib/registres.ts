@@ -109,51 +109,6 @@ const listeOpts = (valeurs: string[]) =>
 const membreRel = { select: { id: true, nomRp: true } };
 
 export const REGISTRES: RegistreDef[] = [
-  /* ═══ Militaire — droits de passage ═══════════════════════ */
-  {
-    cle: "droits-de-passage",
-    champAuteur: "accordeParId",
-    chemin: "/registres/droits-de-passage",
-    modele: "passageRight",
-    titre: "Droits de passage",
-    singulier: "droit de passage",
-    surTitre: "Branche militaire",
-    description:
-      "Qui peut traverser les terres de la Maison, à quel titre et jusqu'à quand. Tout droit accordé est nominatif, motivé et révocable.",
-    icone: "passage",
-    famille: "passage",
-    champStatut: "statut",
-    droits: { lire: P.PASSAGE_READ, creer: P.PASSAGE_CREATE, valider: P.PASSAGE_VALIDATE },
-    tri: { dateOctroi: "desc" },
-    recherche: ["beneficiaireNom", "typeDroit", "motif"],
-    include: { beneficiaire: membreRel, accordePar: membreRel },
-    champs: [
-      { nom: "beneficiaireId", label: "Bénéficiaire (membre)", type: "membre", section: "Bénéficiaire", aide: "Laissez vide pour un tiers extérieur à la Maison." },
-      { nom: "beneficiaireNom", label: "Bénéficiaire extérieur", type: "texte", section: "Bénéficiaire", aide: "Nom RP, compagnie ou faction." },
-      { nom: "typeDroit", label: "Type de droit", type: "texte", requis: true, section: "Le droit", aide: "Ex. : passage des cols du nord, escorte de convoi." },
-      { nom: "nombreDroits", label: "Nombre de droits", type: "nombre", defaut: "1", min: 1, section: "Le droit" },
-      { nom: "dateOctroi", label: "Date d'octroi", type: "date", requis: true, section: "Le droit" },
-      { nom: "expiration", label: "Expiration", type: "date", section: "Le droit", aide: "Laissez vide pour un droit sans terme." },
-      { nom: "accordeParId", label: "Accordé par", type: "membre", auteur: true, section: "Le droit" },
-      { nom: "motif", label: "Motif", type: "zone", large: true, section: "Le droit" },
-      { nom: "statut", label: "Statut", type: "select", options: opts("passage"), defaut: "actif", section: "Le droit" },
-    ],
-    colonnes: [
-      { champ: "typeDroit", entete: "Droit", principal: true },
-      { champ: "beneficiaire", entete: "Bénéficiaire", type: "relation", relation: "beneficiaire", sousChamp: "nomRp", repli: "beneficiaireNom" },
-      { champ: "nombreDroits", entete: "Nb", type: "nombre" },
-      { champ: "dateOctroi", entete: "Octroyé le", type: "date", masquerMobile: true },
-      { champ: "expiration", entete: "Expire le", type: "date" },
-      { champ: "accordePar", entete: "Accordé par", type: "relation", relation: "accordePar", sousChamp: "nomRp", masquerMobile: true },
-      { champ: "statut", entete: "Statut", type: "statut" },
-    ],
-    transitions: [
-      { vers: "actif", label: "Réactiver", icone: "valider", ton: "succes", droit: P.PASSAGE_VALIDATE, depuis: ["revoque", "expire"] },
-      { vers: "revoque", label: "Révoquer", icone: "refuser", ton: "danger", droit: P.PASSAGE_VALIDATE, depuis: ["actif"] },
-      { vers: "expire", label: "Marquer expiré", icone: "horloge", ton: "neutre", droit: P.PASSAGE_VALIDATE, depuis: ["actif"] },
-    ],
-  },
-
   /* ═══ Garde-Chasse — patrouilles ══════════════════════════ */
   {
     cle: "patrouilles",

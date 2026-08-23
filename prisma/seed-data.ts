@@ -55,7 +55,7 @@ export const COUNCIL_ROLES = [
     label: "Champion",
     position: 2,
     icon: "champion",
-    description: "Bras armé de la Maison. Conduit les missions, les opérations martiales et les droits de passage.",
+    description: "Bras armé de la Maison. Conduit les missions et les opérations martiales.",
   },
   {
     key: "intendant",
@@ -92,7 +92,7 @@ export const BRANCHES = [
     color: "#b5563f",
     motto: "La lame veille quand la Maison dort.",
     description:
-      "Défense de la Maison, opérations armées, escortes et droits de passage. Toute action de force passe par elle.",
+      "Défense de la Maison, opérations armées et escortes. Toute action de force passe par elle.",
     grades: [
       { key: "maitre_de_guerre", label: "Maître de Guerre", level: 1 },
       { key: "capitaine", label: "Capitaine", level: 2 },

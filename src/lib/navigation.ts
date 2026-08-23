@@ -26,7 +26,6 @@ export const NAVIGATION: Section[] = [
       { href: "/annonces", label: "Annonces", icone: "annonce", droit: P.ANNOUNCEMENT_READ },
       { href: "/calendrier", label: "Calendrier", icone: "calendrier", droit: P.EVENT_READ },
       { href: "/presence", label: "Présence & absences", icone: "presence", droit: P.ATTENDANCE_READ },
-      { href: "/galerie", label: "Galerie", icone: "galerie", droit: P.GALLERY_READ },
       { href: "/histoire", label: "Histoire", icone: "histoire" },
       { href: "/reglement", label: "Règlement", icone: "reglement" },
     ],
@@ -34,7 +33,6 @@ export const NAVIGATION: Section[] = [
   {
     titre: "Registres",
     entrees: [
-      { href: "/registres/droits-de-passage", label: "Droits de passage", icone: "passage", droit: P.PASSAGE_READ },
       { href: "/registres/patrouilles", label: "Patrouilles", icone: "patrouille", droit: P.PATROL_READ, pastille: "patrouilles" },
       { href: "/registres/permis-de-recolte", label: "Permis de récolte", icone: "permis", droit: P.HARVEST_READ, pastille: "permisAttente" },
     ],

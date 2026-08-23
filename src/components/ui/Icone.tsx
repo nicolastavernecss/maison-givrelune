@@ -13,7 +13,6 @@ const T: Record<string, ReactNode> = {
   membres: <><circle cx="9" cy="8" r="3.2" /><path d="M3 20c0-3.3 2.7-5.4 6-5.4s6 2.1 6 5.4" /><path d="M16.5 5.6a3 3 0 0 1 0 5.6" /><path d="M18 14.8c1.9.6 3 2.4 3 4.6" /></>,
   organigramme: <><rect x="9" y="2.5" width="6" height="4.5" rx="1" /><rect x="2.5" y="17" width="6" height="4.5" rx="1" /><rect x="15.5" y="17" width="6" height="4.5" rx="1" /><path d="M12 7v4.5M5.5 17v-3a1.5 1.5 0 0 1 1.5-1.5h10a1.5 1.5 0 0 1 1.5 1.5v3" /></>,
   registre: <><path d="M6.5 3h11a1.5 1.5 0 0 1 1.5 1.5V21l-3.2-2-3.3 2-3.3-2-3.2 2V4.5A1.5 1.5 0 0 1 6.5 3Z" /><path d="M9 8h6M9 12h6" /></>,
-  passage: <><path d="M3 21V9.5L12 4l9 5.5V21" /><path d="M8 21v-6a4 4 0 0 1 8 0v6" /><path d="M2 21h20" /></>,
   patrouille: <><circle cx="12" cy="12" r="9" /><path d="M15.6 8.4 13.7 13.7 8.4 15.6l1.9-5.3z" /></>,
   permis: <><path d="M12 3a4 4 0 0 1 4 4c0 2-1.2 2.7-1.2 4.2h-5.6C9.2 9.7 8 9 8 7a4 4 0 0 1 4-4Z" /><path d="M8 13.2h8l1.6 3.3H6.4z" /><path d="M4 16.5h16V21H4z" /></>,
 
@@ -44,7 +43,6 @@ const T: Record<string, ReactNode> = {
   annonce: <><path d="M4 9.6v4.8h3.6L14 19V5L7.6 9.6z" /><path d="M17.2 8.4a5 5 0 0 1 0 7.2M19.6 5.8a8.4 8.4 0 0 1 0 12.4" /></>,
   calendrier: <><rect x="3.2" y="5" width="17.6" height="16" rx="1.6" /><path d="M3.2 10h17.6M8 3v4M16 3v4" /><path d="M7.6 14h2M11 14h2M14.4 14h2M7.6 17.4h2M11 17.4h2" /></>,
   presence: <><circle cx="10" cy="8" r="3.4" /><path d="M3.4 20.4c0-3.5 2.9-5.8 6.6-5.8 1 0 2 .2 2.8.5" /><path d="m14.6 17.4 2.2 2.2 4.2-4.4" /></>,
-  galerie: <><rect x="3" y="4.6" width="18" height="14.8" rx="1.6" /><circle cx="8.6" cy="10" r="1.8" /><path d="m3.4 17.6 5-5.2 4 4 3-2.6 5 4.6" /></>,
   histoire: <><path d="M4 4.4h6.4A2.6 2.6 0 0 1 13 7v13a2.2 2.2 0 0 0-2.2-2H4z" /><path d="M20 4.4h-6.4A2.6 2.6 0 0 0 11 7v13a2.2 2.2 0 0 1 2.2-2H20z" /></>,
 
   // ── Gouvernance

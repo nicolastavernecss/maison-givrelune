@@ -44,7 +44,6 @@ async function main() {
   if (TOUT) {
     const r = {
       permis: (await prisma.harvestPermit.deleteMany()).count,
-      passages: (await prisma.passageRight.deleteMany()).count,
       patrouilles: (await prisma.patrol.deleteMany()).count,
       postes: (await prisma.dutySession.deleteMany()).count,
       rapports: (await prisma.report.deleteMany()).count,
@@ -56,7 +55,6 @@ async function main() {
       annonces: (await prisma.announcement.deleteMany()).count,
       evenements: (await prisma.event.deleteMany()).count,
       absences: (await prisma.attendance.deleteMany()).count,
-      galerie: (await prisma.galleryItem.deleteMany()).count,
       demandes: (await prisma.roleRequest.deleteMany()).count,
       tickets: (await prisma.ticket.deleteMany()).count,
       sanctions: (await prisma.sanction.deleteMany()).count,

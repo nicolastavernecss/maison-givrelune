@@ -6,7 +6,6 @@ import { exigerMembre, peut } from "@/lib/auth";
 import { tracer } from "@/lib/audit";
 import { ETATS_POSTE, PERMISSIONS as P } from "@/lib/domain";
 import { monPoste, seuilPoste } from "@/lib/presence";
-import { enregistrerPiecesJointes, fichiersDe } from "@/lib/fichiers";
 
 export type EtatVie = { erreur?: string; succes?: string };
 
@@ -313,49 +312,4 @@ export async function actionPatrouilleDepuisPresents(
       .map((m) => m.nomRp)
       .join(", ")}.`,
   };
-}
-
-/* ── Galerie ─────────────────────────────────────────────── */
-
-export async function actionGalerie(_etat: EtatVie, data: FormData): Promise<EtatVie> {
-  const membre = await exigerMembre();
-  if (!peut(membre, P.GALLERY_CREATE)) return { erreur: "Action non autorisée." };
-
-  const titre = txt(data.get("titre"));
-  if (!titre) return { erreur: "Donnez un titre à la capture." };
-
-  const fichiers = fichiersDe(data);
-  if (fichiers.length === 0) return { erreur: "Joignez au moins une image." };
-
-  const item = await prisma.galleryItem.create({
-    data: {
-      titre: titre.slice(0, 180),
-      description: txt(data.get("description")).slice(0, 1000),
-      auteurId: membre.id,
-    },
-  });
-
-  const res = await enregistrerPiecesJointes(fichiers, { galleryItemId: item.id }, membre.id);
-  if (res.acceptes === 0) {
-    await prisma.galleryItem.delete({ where: { id: item.id } });
-    const detail = res.refuses.map((r) => `${r.nom} : ${r.motif}`).join(" · ");
-    return {
-      erreur: `Aucune image valide.${detail ? ` ${detail}.` : " Formats acceptés : PNG, JPEG, WebP, GIF, AVIF — 8 Mo maximum."}`,
-    };
-  }
-
-  revalidatePath("/galerie");
-  const refus = res.refuses.length > 0 ? ` ${res.refuses.length} fichier(s) refusé(s).` : "";
-  return { succes: `${res.acceptes} image(s) ajoutée(s) à la galerie.${refus}` };
-}
-
-export async function actionSupprimerGalerie(data: FormData) {
-  const membre = await exigerMembre();
-  const id = txt(data.get("id"));
-  const item = await prisma.galleryItem.findUnique({ where: { id } });
-  if (!item) return;
-  if (item.auteurId !== membre.id && !peut(membre, P.ADMIN_FULL)) return;
-
-  await prisma.galleryItem.delete({ where: { id } });
-  revalidatePath("/galerie");
 }
