@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { exigerDroit, exigerMembre, hacherMotDePasse, peut, utilisateurCourant } from "@/lib/auth";
@@ -121,25 +122,40 @@ export async function actionDemandeRole(
 }
 
 /**
+ * Renvoie au registre des demandes en disant ce qui a bloqué.
+ *
+ * Déclarée comme fonction nommée, et non comme constante fléchée : c'est à
+ * cette condition que TypeScript comprend qu'elle ne rend jamais la main et
+ * réduit correctement les types après l'appel.
+ */
+function abandon(motif: string): never {
+  redirect(`/gouvernance/demandes?probleme=${motif}`);
+}
+
+/**
  * Ouvre le compte d'un candidat accepté, à partir des identifiants qu'il a
  * lui-même choisis. Aucun mot de passe n'a besoin d'être communiqué.
+ *
+ * Un abandon silencieux laisserait le gradé devant un bouton qui « ne fait
+ * rien » : chaque sortie dit donc pourquoi elle a lieu.
  */
-export async function actionCreerCompteDepuisDemande(data: FormData) {
+export async function actionCreerCompteDepuisDemande(id: string, _data: FormData) {
   const membre = await exigerDroit(PERMISSIONS.ADMIN_MEMBERS);
-  const id = String(data.get("id"));
 
   const demande = await prisma.roleRequest.findUnique({ where: { id } });
-  if (!demande || demande.statut !== "acceptee") return;
-  if (!demande.passwordHash || !demande.loginSouhaite) return;
+  if (!demande) abandon("introuvable");
+  if (demande.statut !== "acceptee") abandon("non_acceptee");
+  if (!demande.loginSouhaite) abandon("sans_identifiant");
+  if (!demande.passwordHash) abandon("sans_mot_de_passe");
 
   const pris = await prisma.user.findFirst({
     where: { login: demande.loginSouhaite },
     select: { id: true },
   });
-  if (pris) return;
+  if (pris) abandon("identifiant_pris");
 
   const rangFils = await prisma.rank.findUnique({ where: { key: "fils" } });
-  if (!rangFils) return;
+  if (!rangFils) abandon("rang_fils_absent");
 
   const branche = demande.branche
     ? await prisma.branch.findFirst({ where: { label: demande.branche } })
@@ -171,7 +187,10 @@ export async function actionCreerCompteDepuisDemande(data: FormData) {
   // L'empreinte n'a plus lieu d'être conservée sur la demande.
   await prisma.roleRequest.update({
     where: { id },
-    data: { passwordHash: null, decisionNote: `${demande.decisionNote} — compte ouvert`.trim() },
+    data: {
+      passwordHash: null,
+      decisionNote: [demande.decisionNote, "compte ouvert"].filter(Boolean).join(" — "),
+    },
   });
 
   await tracer({
@@ -188,10 +207,14 @@ export async function actionCreerCompteDepuisDemande(data: FormData) {
   revalidatePath("/annuaire");
 }
 
-export async function actionExaminerDemande(data: FormData) {
+/**
+ * Examen d'une demande : le statut visé et l'identifiant de la demande sont
+ * liés à l'action côté serveur plutôt que transmis par le bouton d'envoi.
+ * Next.js les signe, le navigateur ne peut donc ni les altérer ni les omettre —
+ * là où la valeur d'un bouton pouvait se perdre à l'envoi.
+ */
+export async function actionExaminerDemande(id: string, statut: string, data: FormData) {
   const membre = await exigerDroit(PERMISSIONS.ROLE_REQUEST_REVIEW, PERMISSIONS.ROLE_REQUEST_APPROVE);
-  const id = String(data.get("id"));
-  const statut = String(data.get("statut"));
   const note = String(data.get("decisionNote") ?? "");
 
   if (!["examinee", "acceptee", "refusee", "en_attente"].includes(statut)) return;
@@ -366,11 +389,14 @@ export async function actionEnregistrerMembre(
 }
 
 /** Octroi ou retrait ponctuel d'une permission. */
-export async function actionDroitMembre(data: FormData) {
+/** `mode` vaut « accorder », « retirer » ou « defaut ». */
+export async function actionDroitMembre(
+  userId: string,
+  permissionId: string,
+  mode: string,
+  _data: FormData,
+) {
   const membre = await exigerDroit(PERMISSIONS.ADMIN_ROLES);
-  const userId = String(data.get("userId"));
-  const permissionId = String(data.get("permissionId"));
-  const mode = String(data.get("mode")); // accorder | retirer | defaut
 
   // On ne distribue pas les clés de la Maison sans les avoir soi-même :
   // seul un Patriarche peut accorder l'administration totale.

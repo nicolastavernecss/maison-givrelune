@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Badge, BadgeStatut, Carte, Definitions, EnTetePage, LienBouton, Stat, Vide } from "@/components/ui/base";
+import { Badge, BadgeStatut, Carte, Definitions, EnTetePage, LienBouton, Message, Stat, Vide } from "@/components/ui/base";
 import { Icone } from "@/components/ui/Icone";
 import { ActionLigne } from "@/components/ui/form";
 import {
@@ -15,13 +15,26 @@ import { dateHeure, relatif } from "@/lib/format";
 export const metadata: Metadata = { title: "Demandes de rôle" };
 export const dynamic = "force-dynamic";
 
+/** Ce qui peut empêcher l'ouverture d'un compte, dit en clair. */
+const MOTIFS: Record<string, string> = {
+  introuvable: "Cette demande n'existe plus dans le registre.",
+  non_acceptee: "La demande doit d'abord être acceptée avant d'ouvrir le compte.",
+  sans_identifiant:
+    "Cette demande ne porte pas d'identifiant : elle date d'avant leur saisie. Créez la fiche à la main depuis l'administration des membres.",
+  sans_mot_de_passe:
+    "Aucun mot de passe n'est attaché à cette demande — le compte a sans doute déjà été ouvert.",
+  identifiant_pris: "Cet identifiant est déjà utilisé par un membre de la Maison.",
+  rang_fils_absent:
+    "Le rang « Fils » est absent du référentiel : impossible d'y rattacher le nouveau membre.",
+};
+
 export default async function Demandes({
   searchParams,
 }: {
-  searchParams: Promise<{ statut?: string }>;
+  searchParams: Promise<{ statut?: string; probleme?: string }>;
 }) {
   const membre = await exigerDroit(P.ROLE_REQUEST_READ);
-  const { statut } = await searchParams;
+  const { statut, probleme } = await searchParams;
   const examine = peut(membre, P.ROLE_REQUEST_REVIEW);
   const decide = peut(membre, P.ROLE_REQUEST_APPROVE);
 
@@ -49,6 +62,14 @@ export default async function Demandes({
           )
         }
       />
+
+      {probleme && (
+        <div className="mb-5">
+          <Message tone="danger" titre="Le compte n'a pas pu être ouvert">
+            {MOTIFS[probleme] ?? "L'opération a été interrompue pour une raison inattendue."}
+          </Message>
+        </div>
+      )}
 
       <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
@@ -134,8 +155,10 @@ export default async function Demandes({
                   )}
 
                   {examine && (
-                    <form action={actionExaminerDemande} className="mt-4">
-                      <input type="hidden" name="id" value={d.id} />
+                    <form
+                      action={actionExaminerDemande.bind(null, d.id, "examinee")}
+                      className="mt-4"
+                    >
                       <div className="flex flex-wrap items-end gap-2">
                         <label className="min-w-[220px] flex-1">
                           <span className="mb-1 block text-[0.62rem] tracking-[0.16em] text-givre-300/50 uppercase">
@@ -152,8 +175,7 @@ export default async function Demandes({
                         <div className="flex flex-wrap gap-1.5">
                           <button
                             type="submit"
-                            name="statut"
-                            value="examinee"
+                            formAction={actionExaminerDemande.bind(null, d.id, "examinee")}
                             className="inline-flex items-center gap-1.5 rounded-[2px] border border-argent-500/25 px-2.5 py-1.5 text-[0.74rem] text-givre-200 transition-colors hover:bg-nuit-600/70"
                           >
                             <Icone nom="audit" taille={12} />
@@ -163,8 +185,7 @@ export default async function Demandes({
                             <>
                               <button
                                 type="submit"
-                                name="statut"
-                                value="acceptee"
+                                formAction={actionExaminerDemande.bind(null, d.id, "acceptee")}
                                 className="inline-flex items-center gap-1.5 rounded-[2px] border border-succes/40 bg-succes/12 px-2.5 py-1.5 text-[0.74rem] text-[#8fd0a3] transition-colors hover:bg-succes/22"
                               >
                                 <Icone nom="valider" taille={12} />
@@ -172,8 +193,7 @@ export default async function Demandes({
                               </button>
                               <button
                                 type="submit"
-                                name="statut"
-                                value="refusee"
+                                formAction={actionExaminerDemande.bind(null, d.id, "refusee")}
                                 className="inline-flex items-center gap-1.5 rounded-[2px] border border-danger/40 bg-danger/12 px-2.5 py-1.5 text-[0.74rem] text-[#e69a8c] transition-colors hover:bg-danger/22"
                               >
                                 <Icone nom="refuser" taille={12} />
@@ -199,8 +219,10 @@ export default async function Demandes({
                             Demande acceptée. Le candidat a déjà choisi son identifiant et son mot
                             de passe — ouvrez son compte, il n'y a rien à lui transmettre.
                           </p>
-                          <form action={actionCreerCompteDepuisDemande} className="mt-2">
-                            <input type="hidden" name="id" value={d.id} />
+                          <form
+                            action={actionCreerCompteDepuisDemande.bind(null, d.id)}
+                            className="mt-2"
+                          >
                             <button
                               type="submit"
                               className="inline-flex items-center gap-2 rounded-[2px] border border-succes/40 bg-succes/15 px-3.5 py-1.5 text-[0.82rem] text-[#8fd0a3] transition-colors hover:bg-succes/25"

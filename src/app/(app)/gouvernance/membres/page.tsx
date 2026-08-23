@@ -284,13 +284,18 @@ export default async function AdminMembres({
                                   : "non accordé"}
                           </span>
                         </span>
-                        <form action={actionDroitMembre} className="flex shrink-0 gap-1">
-                          <input type="hidden" name="userId" value={cibleDroits.id} />
-                          <input type="hidden" name="permissionId" value={perm.id} />
+                        <form
+                          action={actionDroitMembre.bind(null, cibleDroits.id, perm.id, "defaut")}
+                          className="flex shrink-0 gap-1"
+                        >
                           <button
                             type="submit"
-                            name="mode"
-                            value="accorder"
+                            formAction={actionDroitMembre.bind(
+                              null,
+                              cibleDroits.id,
+                              perm.id,
+                              "accorder",
+                            )}
                             title="Accorder"
                             className="grid size-6 place-items-center rounded-[2px] border border-succes/30 text-[#8fd0a3] transition-colors hover:bg-succes/15"
                           >
@@ -298,8 +303,12 @@ export default async function AdminMembres({
                           </button>
                           <button
                             type="submit"
-                            name="mode"
-                            value="retirer"
+                            formAction={actionDroitMembre.bind(
+                              null,
+                              cibleDroits.id,
+                              perm.id,
+                              "retirer",
+                            )}
                             title="Retirer"
                             className="grid size-6 place-items-center rounded-[2px] border border-danger/30 text-[#e69a8c] transition-colors hover:bg-danger/15"
                           >
@@ -307,8 +316,12 @@ export default async function AdminMembres({
                           </button>
                           <button
                             type="submit"
-                            name="mode"
-                            value="defaut"
+                            formAction={actionDroitMembre.bind(
+                              null,
+                              cibleDroits.id,
+                              perm.id,
+                              "defaut",
+                            )}
                             title="Revenir au rôle"
                             className="grid size-6 place-items-center rounded-[2px] border border-argent-500/25 text-givre-300/70 transition-colors hover:bg-nuit-600/70"
                           >
