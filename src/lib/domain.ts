@@ -11,7 +11,7 @@ export const MAISON = {
   monnaie: "Septim",
   monnaiePluriel: "Septims",
   serveur: "Keizaal Online",
-  fondateurs: ["Marcus Varro", "Nicolas Imperium Varian"] as const,
+  fondateurs: ["Nicolas Imperium Varian"] as const,
   citations: [
     "Le givre forge notre patience. La lune éclaire notre destinée. Nos actes écriront notre nom.",
     "Chez Givrelune, le rang ne se reçoit pas par la naissance. Les actes forgent le nom.",

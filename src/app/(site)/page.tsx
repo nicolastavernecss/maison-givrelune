@@ -92,8 +92,8 @@ export default async function Accueil() {
             « {MAISON.devise} »
           </p>
           <p className="mt-5 max-w-2xl text-[0.95rem] leading-relaxed text-givre-300/75">
-            Fondée par {MAISON.fondateurs[0]} et {MAISON.fondateurs[1]}, sans lignage noble, pour bâtir
-            un nom par les actes. Le givre pour la patience, la lune pour l'ambition.
+            Fondée par {MAISON.fondateurs.join(" et ")}, sans lignage noble, pour bâtir un nom par les
+            actes. Le givre pour la patience, la lune pour l'ambition.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">

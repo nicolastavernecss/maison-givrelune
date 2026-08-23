@@ -397,11 +397,11 @@ Une absence prolongée se déclare à l'avance au registre de présence. Un memb
 
 Les manquements sont sanctionnés par avertissement, rétrogradation, exclusion temporaire ou bannissement, selon la gravité et la récidive. La décision revient aux Patriarches, assistés du Sénéchal. Toute sanction est motivée et consignée.`;
 
-export const HISTOIRE = `## Deux hommes sans nom
+export const HISTOIRE = `## Un homme sans nom
 
-La Maison Givrelune ne descend d'aucun sang noble. Elle naît de deux hommes qui n'avaient rien à hériter : **Marcus Varro**, maître couturier impérial dont l'aiguille habillait les cours sans jamais y être invitée, et **Nicolas Imperium Varian**, qui refusa qu'un titre absent décide de sa vie.
+La Maison Givrelune ne descend d'aucun sang noble. Elle naît d'un homme qui n'avait rien à hériter : **Nicolas Imperium Varian**, qui refusa qu'un titre absent décide de sa vie.
 
-Ils firent le même constat : en Bordeciel, on ne vous demande pas d'où vous venez si votre travail est irréprochable et votre parole tenue.
+Il fit très tôt le constat que répètent depuis tous ceux qui l'ont rejoint : en Bordeciel, on ne vous demande pas d'où vous venez si votre travail est irréprochable et votre parole tenue.
 
 ## Le givre et la lune
 

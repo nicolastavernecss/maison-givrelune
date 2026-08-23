@@ -77,7 +77,6 @@ const MOTS_DU_CONTEXTE = [
   "senechal",
   "intendant",
   "champion",
-  "varro",
   "varian",
   "discord",
   "admin",

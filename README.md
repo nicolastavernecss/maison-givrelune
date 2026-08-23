@@ -54,7 +54,6 @@ SEED_PASSWORD="Votre-Mot-De-Passe-Solide-42" npm run db:seed
 | Identifiant | Membre | Rang |
 |---|---|---|
 | `nicolas.varian` | Nicolas Imperium Varian | Patriarche |
-| `marcus.varro` | Marcus Varro | Patriarche, couturier |
 
 La Maison démarre vide : aucun autre membre, aucune fonction de Conseil pourvue,
 aucun grade attribué. Les vrais membres arrivent de deux façons :

@@ -10,7 +10,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const A_GARDER = ["marcus.varro", "nicolas.varian"];
+const A_GARDER = ["nicolas.varian"];
 
 async function main() {
   const partants = await prisma.user.findMany({

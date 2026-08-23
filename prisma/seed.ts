@@ -580,21 +580,12 @@ async function main() {
   };
 
   /**
-   * Les deux fondateurs, toujours créés : ce sont eux qui ouvriront les
-   * comptes des autres depuis Gouvernance → Membres & rôles, ou qui
-   * accepteront les demandes de rôle. Les droits découlent automatiquement
-   * du rang, du grade et de la fonction de Conseil qu'on leur attribue.
+   * Le fondateur, toujours créé : c'est lui qui ouvrira les comptes des
+   * autres depuis Gouvernance → Membres & rôles, ou qui acceptera les
+   * demandes de rôle. Les droits découlent automatiquement du rang, du
+   * grade et de la fonction de Conseil qu'on lui attribue.
    */
   const FONDATEURS: MemberSeed[] = [
-    {
-      login: "marcus.varro",
-      nomRp: "Marcus Varro",
-      rank: "patriarche",
-      status: "actif",
-      entree: 900,
-      bio: "Maître couturier impérial. Fondateur. Il habillait les cours sans jamais y être reçu ; il a décidé de bâtir la sienne.",
-      metiers: [["couturier", "maitre"]],
-    },
     {
       login: "nicolas.varian",
       nomRp: "Nicolas Imperium Varian",
@@ -675,7 +666,7 @@ async function main() {
       grade: "artisan",
       status: "actif",
       entree: 430,
-      bio: "Élève de Marcus Varro. Les tenues de cour de la Maison sortent de son établi.",
+      bio: "Formée à l'atelier de la Maison. Les tenues de cour sortent de son établi.",
       metiers: [["couturier", "artisan"]],
     },
     {
@@ -1435,7 +1426,7 @@ async function main() {
           heure: "21:00",
           heureRdv: "20:30",
           lieu: "Grande Salle",
-          createdById: users.get("marcus.varro")!.id,
+          createdById: users.get("nicolas.varian")!.id,
         },
       ],
     });

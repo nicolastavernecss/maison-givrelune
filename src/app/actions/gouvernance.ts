@@ -47,6 +47,23 @@ const schemaDemande = z.object({
 });
 
 /**
+ * Consigne une demande de rôle refusée avant enregistrement.
+ *
+ * Sans cela, un candidat qui bute sur la vérification du mot de passe
+ * s'évanouit sans laisser de trace : côté gouvernance la demande « n'existe
+ * pas », et personne ne peut lui dire ce qui a coincé. On note le nom annoncé
+ * et le motif — jamais le mot de passe, jamais l'adresse électronique.
+ */
+function tracerRefus(nomRp: string, motif: string) {
+  return tracer({
+    action: "refus",
+    entityType: "RoleRequest",
+    label: `Demande de rôle refusée — ${nomRp.trim() || "nom non renseigné"}`,
+    details: motif,
+  });
+}
+
+/**
  * Formulaire public de demande de rôle.
  *
  * Le candidat choisit lui-même son identifiant, son email et son mot de passe.
@@ -63,20 +80,25 @@ export async function actionDemandeRole(
 ): Promise<EtatDemande> {
   const parse = schemaDemande.safeParse(Object.fromEntries(data.entries()));
   if (!parse.success) {
-    return { erreur: parse.error.issues[0]?.message ?? "Formulaire incomplet." };
+    const motif = parse.error.issues[0]?.message ?? "Formulaire incomplet.";
+    await tracerRefus(String(data.get("nomRp") ?? ""), motif);
+    return { erreur: motif };
   }
   const d = parse.data;
 
   const motDePasse = String(data.get("motDePasse") ?? "");
   const confirmation = String(data.get("confirmation") ?? "");
   if (motDePasse !== confirmation) {
-    return { erreur: "Les deux saisies du mot de passe ne correspondent pas." };
+    const motif = "Les deux saisies du mot de passe ne correspondent pas.";
+    await tracerRefus(d.nomRp, motif);
+    return { erreur: motif };
   }
 
   const verdict = await verifierMotDePasse(motDePasse, {
     personnel: [d.loginSouhaite, d.nomRp, d.email, d.discordTag],
   });
   if (!verdict.ok) {
+    await tracerRefus(d.nomRp, `Mot de passe refusé : ${verdict.erreurs.join(" ")}`);
     return { erreur: verdict.erreurs[0], erreurs: verdict.erreurs };
   }
 
@@ -89,6 +111,8 @@ export async function actionDemandeRole(
     }),
   ]);
   if (compteExistant || demandeExistante) {
+    const motif = `Identifiant « ${d.loginSouhaite} » déjà pris.`;
+    await tracerRefus(d.nomRp, motif);
     return { erreur: "Cet identifiant est déjà pris. Choisissez-en un autre." };
   }
 
@@ -101,6 +125,12 @@ export async function actionDemandeRole(
     limiterAction("demande", `nom:${d.nomRp.toLowerCase()}`, 1, 60),
   ]);
   if (!autoriseIp || !autoriseNom) {
+    await tracerRefus(
+      d.nomRp,
+      autoriseIp
+        ? "Une demande portait déjà ce nom dans l'heure écoulée."
+        : "Trop de demandes envoyées depuis la même adresse dans l'heure écoulée.",
+    );
     return {
       erreur: "Une demande est déjà en attente d'examen. Patientez, un gradé la lira.",
     };
