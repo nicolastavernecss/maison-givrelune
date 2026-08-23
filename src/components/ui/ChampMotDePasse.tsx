@@ -22,6 +22,7 @@ export function ChampMotDePasse({
   autoComplete = "new-password",
   avecIndicateur = true,
   large,
+  erreur,
 }: {
   nom?: string;
   label?: string;
@@ -30,6 +31,8 @@ export function ChampMotDePasse({
   autoComplete?: string;
   avecIndicateur?: boolean;
   large?: boolean;
+  /** Reproche fait par le serveur, affiché sous le champ. */
+  erreur?: string;
 }) {
   const [valeur, setValeur] = useState("");
   const [visible, setVisible] = useState(false);
@@ -43,6 +46,7 @@ export function ChampMotDePasse({
       label={label}
       requis={requis}
       large={large}
+      erreur={erreur}
       aide={aide ?? `${LONGUEUR_MIN} caractères minimum. Une phrase dont vous seul vous souvenez vaut mieux qu'un mot compliqué.`}
     >
       <div className="relative">
@@ -55,7 +59,8 @@ export function ChampMotDePasse({
           maxLength={200}
           value={valeur}
           onChange={(e) => setValeur(e.target.value)}
-          className="!pr-10"
+          aria-invalid={erreur ? true : undefined}
+          className={`!pr-10 ${erreur ? "border-danger/60 bg-danger/5" : ""}`}
           placeholder="••••••••••••"
         />
         <button

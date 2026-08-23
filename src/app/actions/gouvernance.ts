@@ -14,7 +14,65 @@ import { verifierMotDePasse } from "@/lib/securite/motsDePasse";
    Demandes de rôle
    ══════════════════════════════════════════════════════════════ */
 
-export type EtatDemande = { erreur?: string; erreurs?: string[]; succes?: boolean };
+export type EtatDemande = {
+  /** Titre du bandeau rouge. */
+  erreur?: string;
+  /** Le détail, une ligne par point à corriger. */
+  erreurs?: string[];
+  /** Le reproche fait à chaque champ, pour le signaler à sa place. */
+  champs?: Record<string, string>;
+  /** Ce qui avait été saisi, pour ne pas le faire retaper. Jamais de mot de passe. */
+  valeurs?: Record<string, string>;
+  /**
+   * Numéro d'envoi. Il ne sert qu'à remonter les champs de mot de passe :
+   * le navigateur vide la confirmation à chaque envoi mais pas le champ
+   * contrôlé, et cet écart provoquerait une fausse erreur de correspondance
+   * au renvoi suivant.
+   */
+  tentative?: number;
+  succes?: boolean;
+};
+
+/** Noms lisibles des champs, pour que le bandeau désigne ce que le candidat voit. */
+const LIBELLES: Record<string, string> = {
+  nomRp: "Nom RP",
+  discordTag: "Pseudo Discord",
+  contact: "Autre moyen de contact",
+  email: "Adresse email",
+  loginSouhaite: "Identifiant de connexion",
+  motDePasse: "Mot de passe",
+  confirmation: "Confirmation du mot de passe",
+  branche: "Branche",
+  gradeSouhaite: "Grade actuel",
+  cercle: "Cercle",
+  metiers: "Métiers",
+  presentePar: "Présenté par",
+  message: "Message aux Patriarches",
+};
+
+/** Champs à réafficher tels quels après un refus — le mot de passe en est exclu. */
+const A_CONSERVER = [
+  "nomRp",
+  "discordTag",
+  "contact",
+  "email",
+  "loginSouhaite",
+  "branche",
+  "gradeSouhaite",
+  "cercle",
+  "metiers",
+  "presentePar",
+  "message",
+];
+
+function valeursSaisies(data: FormData): Record<string, string> {
+  const v: Record<string, string> = {};
+  for (const cle of A_CONSERVER) {
+    const brut = data.get(cle);
+    if (typeof brut === "string" && brut) v[cle] = brut;
+  }
+  return v;
+}
 
 const schemaDemande = z.object({
   nomRp: z.string().trim().min(2, "Le nom RP est requis.").max(80),
@@ -78,20 +136,38 @@ export async function actionDemandeRole(
   _etat: EtatDemande,
   data: FormData,
 ): Promise<EtatDemande> {
+  const valeurs = valeursSaisies(data);
+  const tentative = (_etat.tentative ?? 0) + 1;
+
+  // Toutes les erreurs d'un coup, et non la première venue : un candidat qui
+  // corrige un point pour buter sur le suivant finit par renoncer.
   const parse = schemaDemande.safeParse(Object.fromEntries(data.entries()));
   if (!parse.success) {
-    const motif = parse.error.issues[0]?.message ?? "Formulaire incomplet.";
-    await tracerRefus(String(data.get("nomRp") ?? ""), motif);
-    return { erreur: motif };
+    const champs: Record<string, string> = {};
+    for (const souci of parse.error.issues) {
+      const champ = String(souci.path[0] ?? "");
+      if (champ && !champs[champ]) champs[champ] = souci.message;
+    }
+    const erreurs = Object.entries(champs).map(
+      ([champ, motif]) => `${LIBELLES[champ] ?? champ} — ${motif}`,
+    );
+    await tracerRefus(String(data.get("nomRp") ?? ""), erreurs.join(" · "));
+    return { erreur: "Votre demande n'a pas pu être envoyée.", erreurs, champs, valeurs, tentative };
   }
   const d = parse.data;
 
   const motDePasse = String(data.get("motDePasse") ?? "");
   const confirmation = String(data.get("confirmation") ?? "");
   if (motDePasse !== confirmation) {
-    const motif = "Les deux saisies du mot de passe ne correspondent pas.";
+    const motif = "Les deux saisies ne correspondent pas.";
     await tracerRefus(d.nomRp, motif);
-    return { erreur: motif };
+    return {
+      erreur: "Votre demande n'a pas pu être envoyée.",
+      erreurs: [`${LIBELLES.confirmation} — ${motif}`],
+      champs: { confirmation: motif },
+      valeurs,
+      tentative,
+    };
   }
 
   const verdict = await verifierMotDePasse(motDePasse, {
@@ -99,7 +175,13 @@ export async function actionDemandeRole(
   });
   if (!verdict.ok) {
     await tracerRefus(d.nomRp, `Mot de passe refusé : ${verdict.erreurs.join(" ")}`);
-    return { erreur: verdict.erreurs[0], erreurs: verdict.erreurs };
+    return {
+      erreur: "Votre mot de passe a été refusé.",
+      erreurs: verdict.erreurs,
+      champs: { motDePasse: verdict.erreurs[0] },
+      valeurs,
+      tentative,
+    };
   }
 
   // L'identifiant doit être libre, côté comptes comme côté demandes en cours.
@@ -111,9 +193,15 @@ export async function actionDemandeRole(
     }),
   ]);
   if (compteExistant || demandeExistante) {
-    const motif = `Identifiant « ${d.loginSouhaite} » déjà pris.`;
-    await tracerRefus(d.nomRp, motif);
-    return { erreur: "Cet identifiant est déjà pris. Choisissez-en un autre." };
+    const motif = "Cet identifiant est déjà pris. Choisissez-en un autre.";
+    await tracerRefus(d.nomRp, `Identifiant « ${d.loginSouhaite} » déjà pris.`);
+    return {
+      erreur: "Votre demande n'a pas pu être envoyée.",
+      erreurs: [`${LIBELLES.loginSouhaite} — ${motif}`],
+      champs: { loginSouhaite: motif },
+      valeurs,
+      tentative,
+    };
   }
 
   // Garde-fou contre les envois en rafale. Ce formulaire est la seule
@@ -133,6 +221,8 @@ export async function actionDemandeRole(
     );
     return {
       erreur: "Une demande est déjà en attente d'examen. Patientez, un gradé la lira.",
+      valeurs,
+      tentative,
     };
   }
 
