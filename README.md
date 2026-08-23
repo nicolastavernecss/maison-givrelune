@@ -31,11 +31,25 @@ Le site tourne ensuite sur **http://localhost:3000**.
 
 ### Les deux comptes fondateurs
 
-Mot de passe : `Corbeau-Neige-Nord-88`
+**Le mot de passe initial n'est écrit nulle part dans ce dépôt.** Il est engendré
+au hasard lors du `npm run setup` et affiché **une seule fois** dans la console :
 
-*(Il respecte la politique du site : 12 caractères minimum, quatre familles de
-caractères, aucun mot du contexte. **Changez-le à la première connexion**, depuis
-*Mon compte*.)*
+```
+     ┌──────────────────────────────────────────────────────┐
+     │  MOT DE PASSE INITIAL — affiché une seule fois       │
+     └──────────────────────────────────────────────────────┘
+        Corbeau-Ravine-Aubier-73
+```
+
+Notez-le, puis changez-le depuis *Mon compte* dès la première connexion. Pour en
+imposer un connu d'avance (rejouer un amorçage, par exemple) :
+
+```bash
+SEED_PASSWORD="Votre-Mot-De-Passe-Solide-42" npm run db:seed
+```
+
+> Rejouer le seed ne réinitialise **jamais** un mot de passe existant : il n'est
+> posé qu'à la création du compte.
 
 | Identifiant | Membre | Rang |
 |---|---|---|

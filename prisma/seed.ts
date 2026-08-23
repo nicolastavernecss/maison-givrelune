@@ -6,6 +6,7 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { hashSync } from "bcryptjs";
+import { randomInt } from "node:crypto";
 import { PERMISSIONS, PERMISSION_CATALOG } from "../src/lib/domain";
 import {
   BRANCHES,
@@ -505,10 +506,36 @@ async function main() {
   );
 
   // ── Membres ────────────────────────────────────────────────
-  // Doit respecter la politique de mot de passe du site : au moins
-  // 12 caractères, quatre familles, aucun mot du contexte (« givrelune »,
-  // « skyrim »…), aucune suite de touches.
-  const MOT_DE_PASSE_DEMO = "Corbeau-Neige-Nord-88";
+  /*
+   * Mot de passe initial des fondateurs.
+   *
+   * Rien n'est écrit en dur ici : le dépôt peut être public sans livrer
+   * les clés de la Maison. Deux cas :
+   *   - SEED_PASSWORD est défini  → on l'utilise (utile pour rejouer un seed) ;
+   *   - sinon                     → on en engendre un au hasard, affiché une
+   *                                 seule fois dans la console.
+   *
+   * Il respecte la politique du site : au moins 12 caractères, quatre
+   * familles, aucun mot du contexte, aucune suite de touches.
+   */
+  const MOTS = [
+    "Corbeau", "Ravine", "Aubier", "Silex", "Bruyere", "Cendre", "Sillon",
+    "Tourbe", "Fougere", "Ardoise", "Roseau", "Chardon", "Ecume", "Brume",
+    "Falaise", "Marais", "Combe", "Sente", "Genet", "Ramure", "Halage",
+    "Buse", "Loutre", "Sanglier", "Bouleau", "Erable", "Frene", "Aulne",
+  ];
+  const engendrerMotDePasse = () => {
+    const tire = () => MOTS[randomInt(MOTS.length)];
+    const a = tire();
+    let b = tire();
+    let c = tire();
+    while (b === a) b = tire();
+    while (c === a || c === b) c = tire();
+    return `${a}-${b}-${c}-${randomInt(10, 100)}`;
+  };
+
+  const MOT_DE_PASSE_ENGENDRE = !process.env.SEED_PASSWORD;
+  const MOT_DE_PASSE_DEMO = process.env.SEED_PASSWORD ?? engendrerMotDePasse();
   const hash = hashSync(MOT_DE_PASSE_DEMO, 12);
 
   type MemberSeed = {
@@ -696,10 +723,13 @@ async function main() {
       status: m.status ?? "actif",
       dateEntree: jours(m.entree ?? 100),
     };
+    // Le mot de passe n'est posé qu'à la création : rejouer le seed ne doit
+    // jamais réinitialiser celui qu'un membre a choisi depuis « Mon compte ».
+    const { passwordHash, ...sansMotDePasse } = data;
     const user = await prisma.user.upsert({
       where: { login: m.login },
-      update: data,
-      create: data,
+      update: sansMotDePasse,
+      create: { ...sansMotDePasse, passwordHash },
     });
     users.set(m.login, user);
   }
@@ -739,7 +769,20 @@ async function main() {
       data: { leaderId: chefRamure.id },
     });
   }
-  console.log(`  ❖ ${MEMBERS.length} membres (mot de passe de démonstration : ${MOT_DE_PASSE_DEMO})`);
+  if (MOT_DE_PASSE_ENGENDRE) {
+    console.log(`  ❖ ${MEMBERS.length} membres créés.`);
+    console.log("");
+    console.log("     ┌──────────────────────────────────────────────────────┐");
+    console.log("     │  MOT DE PASSE INITIAL — affiché une seule fois       │");
+    console.log("     └──────────────────────────────────────────────────────┘");
+    console.log(`        ${MOT_DE_PASSE_DEMO}`);
+    console.log("");
+    console.log("     Notez-le maintenant, puis changez-le depuis « Mon compte »");
+    console.log("     dès votre première connexion.");
+    console.log("");
+  } else {
+    console.log(`  ❖ ${MEMBERS.length} membres (mot de passe fourni par SEED_PASSWORD)`);
+  }
 
   // ── Cours du marché : historique d'amorce ──────────────────
   if (AVEC_DEMO && (await prisma.marketPrice.count()) === 0) {
